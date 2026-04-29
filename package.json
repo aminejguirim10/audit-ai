@@ -1,5 +1,5 @@
 {
-  "name": "audit-ai-test",
+  "name": "audit-ai",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,9 +9,13 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/groq": "^3.0.31",
+    "@ai-sdk/react": "^3.0.142",
+    "ai": "^6.0.140",
     "next": "16.2.1",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
