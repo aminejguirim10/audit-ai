@@ -42,11 +42,11 @@ jobs:
       - name: Build and Push Docker Image
         run: |
           docker build \
-            -t ${{ secrets.DOCKER_USERNAME }}/ai-docker:${{ github.sha }} .
-          docker push ${{ secrets.DOCKER_USERNAME }}/ai-docker:${{ github.sha }}
+            -t ${{ secrets.DOCKER_USERNAME }}/audit-ai:${{ github.sha }} .
+          docker push ${{ secrets.DOCKER_USERNAME }}/audit-ai:${{ github.sha }}
 
       - name: Tag and Push latest
         run: |
-          docker tag ${{ secrets.DOCKER_USERNAME }}/ai-docker:${{ github.sha }} \
-                     ${{ secrets.DOCKER_USERNAME }}/ai-docker:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/ai-docker:latest
+          docker tag ${{ secrets.DOCKER_USERNAME }}/audit-ai:${{ github.sha }} \
+                     ${{ secrets.DOCKER_USERNAME }}/audit-ai:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/audit-ai:latest
