@@ -281,7 +281,7 @@ export async function POST(req: Request) {
       model: groq("llama-3.3-70b-versatile"),
       temperature: 0.2,
       system:
-        "Tu es un consultant senior en audit qualite pour un etablissement scolaire (NEI Carthage). Reponds uniquement en francais professionnel. Ton objectif est de produire, pour chaque question mal repondue, une action corrective claire, operationnelle et realiste pour un contexte scolaire.",
+        "Tu es un consultant senior en audit qualite pour un etablissement scolaire (ENICarthage). Reponds uniquement en francais professionnel. Ton objectif est de produire, pour chaque question mal repondue, une action corrective claire, operationnelle et realiste pour un contexte scolaire.",
       prompt: [
         "Retourne strictement un JSON valide.",
         "Le JSON doit etre un tableau d'objets avec les champs exacts: title, description, temps_estime, priority.",
