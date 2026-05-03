@@ -31,8 +31,6 @@ const correctiveActionSchema = z.object({
 
 type CorrectiveAction = z.infer<typeof correctiveActionSchema>;
 
-const correctiveActionArraySchema = z.array(correctiveActionSchema);
-
 const fallbackPriorities: Record<string, z.infer<typeof priorityEnum>> = {
   critique: "CRITICAL",
   securite: "CRITICAL",
@@ -93,13 +91,9 @@ function escapeRegExp(value: string): string {
 
 function priorityFromQuestion(question: string): z.infer<typeof priorityEnum> {
   const normalized = normalize(question);
-
   for (const [keyword, priority] of Object.entries(fallbackPriorities)) {
-    if (normalized.includes(keyword)) {
-      return priority;
-    }
+    if (normalized.includes(keyword)) return priority;
   }
-
   return "MEDIUM";
 }
 
@@ -124,43 +118,27 @@ function normalizeTimeline(
   value: string | undefined,
   priority: z.infer<typeof priorityEnum>,
 ): string {
-  if (!value) {
-    return timelineFromPriority(priority);
-  }
-
+  if (!value) return timelineFromPriority(priority);
   const raw = value.trim();
   const normalized = normalize(raw);
-
-  if (forbiddenTimeUnitsRegex.test(normalized)) {
+  if (forbiddenTimeUnitsRegex.test(normalized))
     return timelineFromPriority(priority);
-  }
-
-  if (normalized.includes("immediat") || normalized.includes("jour")) {
+  if (normalized.includes("immediat") || normalized.includes("jour"))
     return realisticTimelines.immediate;
-  }
-
-  if (normalized.includes("court") || normalized.includes("semaine")) {
+  if (normalized.includes("court") || normalized.includes("semaine"))
     return realisticTimelines.shortTerm;
-  }
-
-  if (normalized.includes("moyen") || normalized.includes("mois")) {
+  if (normalized.includes("moyen") || normalized.includes("mois"))
     return realisticTimelines.mediumTerm;
-  }
-
-  if (normalized.includes("long") || normalized.includes("trimestre")) {
+  if (normalized.includes("long") || normalized.includes("trimestre"))
     return realisticTimelines.longTerm;
-  }
-
-  if (normalized.includes("structurel") || normalized.includes("annee")) {
+  if (normalized.includes("structurel") || normalized.includes("annee"))
     return realisticTimelines.structural;
-  }
-
   return timelineFromPriority(priority);
 }
 
 function buildDetailedDescription(question: string): string {
   return [
-    `- Cause racine probable: non-conformite sur \"${question}\" liee a une procedure insuffisamment formalisee ou a un controle interne non regulier.`,
+    `- Cause racine probable: non-conformite sur "${question}" liee a une procedure insuffisamment formalisee ou a un controle interne non regulier.`,
     "- Actions correctives detaillees: verifier les exigences, formaliser une procedure, former les acteurs, mettre en place un controle periodique et reevaluer l'efficacite.",
     "- Alternatives possibles: faible cout (checklists + reorganisation), standard (formation ciblee + supervision), renforce (accompagnement externe + audit blanc).",
     "- Responsables: direction, responsable qualite, referent pedagogique/administratif, pilote du processus concerne.",
@@ -172,23 +150,16 @@ function buildDetailedDescription(question: string): string {
 
 function formatDescription(description: string, question: string): string {
   let text = description.trim();
-
-  if (!text) {
-    text = buildDetailedDescription(question);
-  }
-
+  if (!text) return buildDetailedDescription(question);
   text = text.replace(/\r\n/g, "\n");
-
   for (const label of descriptionSectionLabels) {
     const labelRegex = new RegExp(`\\s*-?\\s*${escapeRegExp(label)}`, "g");
     text = text.replace(labelRegex, `\n- ${label}`);
   }
-
   for (const label of descriptionSectionLabels) {
     const inlineRegex = new RegExp(`- ${escapeRegExp(label)}\\s*\n+\\s*`, "g");
     text = text.replace(inlineRegex, `- ${label} `);
   }
-
   return text.replace(/^\n+/, "").trim();
 }
 
@@ -197,21 +168,15 @@ function ensureDetailedDescription(
   question: string,
 ): string {
   const formatted = formatDescription(description, question);
-
-  if (!formatted) {
-    return buildDetailedDescription(question);
-  }
-
-  const hasAllSections = descriptionSectionLabels.every((section) =>
-    formatted.includes(section),
+  if (!formatted) return buildDetailedDescription(question);
+  const hasAllSections = descriptionSectionLabels.every((s) =>
+    formatted.includes(s),
   );
-
   return hasAllSections ? formatted : buildDetailedDescription(question);
 }
 
 function buildFallbackAction(question: string): CorrectiveAction {
   const priority = priorityFromQuestion(question);
-
   return {
     title: question,
     description: buildDetailedDescription(question),
@@ -220,40 +185,100 @@ function buildFallbackAction(question: string): CorrectiveAction {
   };
 }
 
-function parseActionsFromText(text: string): CorrectiveAction[] {
+function parseActionFromText(
+  text: string,
+  question: string,
+): CorrectiveAction | null {
   const candidates: string[] = [text.trim()];
-
   const fencedMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  if (fencedMatch?.[1]) {
-    candidates.unshift(fencedMatch[1].trim());
-  }
+  if (fencedMatch?.[1]) candidates.unshift(fencedMatch[1].trim());
 
   for (const candidate of candidates) {
-    const start = candidate.indexOf("[");
-    const end = candidate.lastIndexOf("]");
-
-    if (start < 0 || end <= start) {
-      continue;
+    // Tente d'abord un objet JSON unique
+    const objStart = candidate.indexOf("{");
+    const objEnd = candidate.lastIndexOf("}");
+    if (objStart >= 0 && objEnd > objStart) {
+      try {
+        const parsed = JSON.parse(candidate.slice(objStart, objEnd + 1));
+        const validated = correctiveActionSchema.safeParse(parsed);
+        if (validated.success) return validated.data;
+      } catch {
+        /* continue */
+      }
     }
 
-    const jsonSlice = candidate.slice(start, end + 1);
-
-    try {
-      const parsedJson = JSON.parse(jsonSlice);
-      const validated = correctiveActionArraySchema.safeParse(parsedJson);
-
-      if (validated.success) {
-        return validated.data;
+    // Tente un tableau JSON (compatibilité)
+    const arrStart = candidate.indexOf("[");
+    const arrEnd = candidate.lastIndexOf("]");
+    if (arrStart >= 0 && arrEnd > arrStart) {
+      try {
+        const parsed = JSON.parse(candidate.slice(arrStart, arrEnd + 1));
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const validated = correctiveActionSchema.safeParse(parsed[0]);
+          if (validated.success) return validated.data;
+        }
+      } catch {
+        /* continue */
       }
-    } catch {
-      // On continue avec un autre candidat si le parse JSON echoue.
     }
   }
 
-  return [];
+  return null;
 }
 
-export const maxDuration = 30;
+async function generateActionForQuestion(
+  question: string,
+): Promise<CorrectiveAction> {
+  try {
+    const { text } = await generateText({
+      model: groq("llama-3.3-70b-versatile"),
+      temperature: 0.35,
+      system:
+        "Tu es un consultant senior en audit qualite pour un etablissement scolaire (ENICarthage). " +
+        "Reponds uniquement en francais professionnel. " +
+        "Ton objectif est de produire une action corrective claire, operationnelle et realiste " +
+        "specifiquement adaptee a la question posee, en tenant compte de son domaine precis " +
+        "(pedagogique, administratif, securite, hygiene, RH, infrastructure, numerique, communication, conformite).",
+
+      prompt: [
+        "Retourne strictement un objet JSON valide (pas un tableau, un seul objet).",
+        "L'objet doit avoir exactement ces champs: title, description, temps_estime, priority.",
+        "",
+        `Question mal repondue: "${question}"`,
+        "",
+        "Regles strictes:",
+        `- title: exactement ce texte: "${question}"`,
+        "- description: analyse approfondie et specifique a CETTE question. Inclure obligatoirement ces 7 sections dans cet ordre:",
+        "  * Cause racine probable: (specifique au domaine de la question)",
+        "  * Actions correctives detaillees: (etapes concretes et adaptees)",
+        "  * Alternatives possibles: (3 scenarios: faible cout, standard, renforce)",
+        "  * Responsables: (roles pertinents pour ce type de probleme)",
+        "  * Preuves attendues: (documents/traces specifiques au contexte)",
+        "  * Risques si non traite: (consequences reelles liees a CE probleme)",
+        "  * Indicateurs de verification: (KPIs mesurables pour CE domaine)",
+        "- Chaque section commence par un tiret et son contenu est sur la meme ligne.",
+        "- temps_estime: exactement l'une de ces valeurs: IMMEDIAT (0 a 7 jours) | COURT TERME (2 a 4 semaines) | MOYEN TERME (1 a 3 mois) | LONG TERME (1 trimestre scolaire) | STRUCTUREL (1 annee scolaire)",
+        "- priority: exactement l'une de ces valeurs: CRITICAL | HIGH | MEDIUM | LOW",
+        "- Aucun texte avant ou apres le JSON.",
+      ].join("\n"),
+    });
+
+    const action = parseActionFromText(text, question);
+    if (!action) return buildFallbackAction(question);
+
+    const priority = action.priority ?? priorityFromQuestion(question);
+    return {
+      title: question,
+      description: ensureDetailedDescription(action.description, question),
+      temps_estime: normalizeTimeline(action.temps_estime, priority),
+      priority,
+    };
+  } catch {
+    return buildFallbackAction(question);
+  }
+}
+
+export const maxDuration = 60;
 
 export async function OPTIONS(request: Request) {
   return buildCorsOptionsResponse(request);
@@ -277,58 +302,9 @@ export async function POST(req: Request) {
   const failedQuestions = parsed.data.failedQuestions;
 
   try {
-    const { text } = await generateText({
-      model: groq("llama-3.3-70b-versatile"),
-      temperature: 0.2,
-      system:
-        "Tu es un consultant senior en audit qualite pour un etablissement scolaire (ENICarthage). Reponds uniquement en francais professionnel. Ton objectif est de produire, pour chaque question mal repondue, une action corrective claire, operationnelle et realiste pour un contexte scolaire.",
-      prompt: [
-        "Retourne strictement un JSON valide.",
-        "Le JSON doit etre un tableau d'objets avec les champs exacts: title, description, temps_estime, priority.",
-        "Genere exactement une action corrective par question, dans le meme ordre.",
-        "Le champ title doit etre exactement le texte de la question.",
-        "Le champ description doit etre claire et exploitable, sans etre trop longue.",
-        "Le champ description doit inclure explicitement ces sections dans cet ordre: Cause racine probable:, Actions correctives detaillees:, Alternatives possibles:, Responsables:, Preuves attendues:, Risques si non traite:, Indicateurs de verification:.",
-        "Chaque section doit commencer sur une nouvelle ligne.",
-        "Le texte de chaque section doit etre sur la meme ligne apres le deux-points (pas de retour a la ligne apres le titre).",
-        "Ne pas ajouter de section Constat.",
-        "Dans Alternatives possibles:, fournir au minimum trois scenarios: faible cout, standard, renforce.",
-        "Prendre en compte, selon la question, les dimensions pedagogique, administrative, securite, hygiene, RH, infrastructure, numerique, communication et conformite reglementaire.",
-        "Le champ temps_estime ne doit jamais contenir minutes ou heures.",
-        "Le champ temps_estime doit etre une des valeurs suivantes: IMMEDIAT (0 a 7 jours), COURT TERME (2 a 4 semaines), MOYEN TERME (1 a 3 mois), LONG TERME (1 trimestre scolaire), STRUCTUREL (1 annee scolaire).",
-        "Le choix du temps_estime doit etre realiste pour un audit d'ecole et coherent avec l'ampleur de l'action.",
-        "Le champ priority doit etre l'une des valeurs: CRITICAL, HIGH, MEDIUM, LOW.",
-        "Attribuer priority selon le risque pour la securite, la conformite legale, la continuite pedagogique et l'impact sur les eleves.",
-        "N'ajoute aucune explication avant ou apres le JSON.",
-        "Questions mal repondues:",
-        ...failedQuestions.map(
-          (question, index) => `${index + 1}. ${question}`,
-        ),
-      ].join("\n"),
-    });
-
-    const generatedActions = parseActionsFromText(text);
-
-    // Garantit une action pour chaque question, meme si la sortie du modele est partielle.
-    const indexedByTitle = new Map<string, CorrectiveAction>(
-      generatedActions.map((item) => [normalize(item.title), item]),
+    const actions = await Promise.all(
+      failedQuestions.map((question) => generateActionForQuestion(question)),
     );
-
-    const actions = failedQuestions.map((question) => {
-      const candidate = indexedByTitle.get(normalize(question));
-      const priority = candidate?.priority ?? priorityFromQuestion(question);
-
-      if (!candidate) {
-        return buildFallbackAction(question);
-      }
-
-      return {
-        title: question,
-        description: ensureDetailedDescription(candidate.description, question),
-        temps_estime: normalizeTimeline(candidate.temps_estime, priority),
-        priority,
-      };
-    });
 
     return Response.json(
       {
@@ -345,10 +321,7 @@ export async function POST(req: Request) {
         : "Erreur inconnue durant la generation IA.";
 
     return Response.json(
-      {
-        error: "Generation impossible pour le moment.",
-        details: message,
-      },
+      { error: "Generation impossible pour le moment.", details: message },
       { status: 500, headers: corsHeaders },
     );
   }
