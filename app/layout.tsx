@@ -21,7 +21,7 @@ const monoFont = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Audit AI | Accès public au chat correctif",
+  title: "Audit AI",
   description:
     "Audit AI permet d'accéder au chat correctif public et signale que la conversation Audité reste réservée dans la plateforme principale.",
 };
