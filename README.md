@@ -47,6 +47,7 @@ The conversational streaming interface supports two specialized roles tailored t
 - **Description**: Accepts a list of failed audit questions and returns a structured JSON payload containing corrective action guides.
 
 **Request Payload**:
+
 ```json
 {
   "failedQuestions": [
@@ -57,6 +58,7 @@ The conversational streaming interface supports two specialized roles tailored t
 ```
 
 **Response Format**:
+
 ```json
 {
   "totalQuestions": 2,
@@ -78,6 +80,7 @@ The conversational streaming interface supports two specialized roles tailored t
 - **Description**: Streams a response turn-by-turn to build a persistent AI conversation about a selected audit criterion.
 
 **Request Payload**:
+
 ```json
 {
   "messages": [
@@ -102,10 +105,18 @@ AI_CHAT_ALLOWED_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
 ```
 
 Notes:
+
 - `GROQ_API_KEY` is required to communicate with Groq cloud models.
 - `AI_CHAT_ALLOWED_ORIGINS` is a comma-separated list of browser domains allowed to invoke the endpoints.
 
 ## 🚀 Run Locally
+
+### Clone the repository
+
+```bash
+git clone https://github.com/aminejguirim10/audit-ai.git
+cd audit-ai
+```
 
 ### Prerequisites
 
@@ -126,6 +137,7 @@ npm run dev
 ```
 
 Open the application at:
+
 ```text
 http://localhost:3000/
 ```
