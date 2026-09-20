@@ -1,4 +1,4 @@
-import { groq } from "@ai-sdk/groq";
+import { google } from '@ai-sdk/google';
 import { generateText } from "ai";
 import { z } from "zod";
 
@@ -231,7 +231,7 @@ async function generateActionForQuestion(
 ): Promise<CorrectiveAction> {
   try {
     const { text } = await generateText({
-      model: groq("llama-3.3-70b-versatile"),
+      model: google("gemini-3.5-flash"),
       temperature: 0.35,
       system:
         "Tu es un consultant senior en audit qualite pour un etablissement scolaire (ENICarthage). " +

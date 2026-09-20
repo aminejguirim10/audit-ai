@@ -106,7 +106,7 @@ AI_CHAT_ALLOWED_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
 
 Notes:
 
-- `GROQ_API_KEY` is required to communicate with Groq cloud models.
+- `GOOGLE_GENERATIVE_AI_API_KEY` is required to communicate with google cloud models.
 - `AI_CHAT_ALLOWED_ORIGINS` is a comma-separated list of browser domains allowed to invoke the endpoints.
 
 ## 🚀 Run Locally

@@ -1,4 +1,4 @@
-import { groq } from "@ai-sdk/groq";
+import { google } from "@ai-sdk/google";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { z } from "zod";
 
@@ -239,7 +239,7 @@ export async function POST(request: Request) {
     );
 
     const result = streamText({
-      model: groq("meta-llama/llama-4-scout-17b-16e-instruct"),
+      model: google("gemini-3.5-flash"),
       temperature: 0.25,
       system: buildSystemPrompt({
         assistantRole: parsed.data.assistantRole,
