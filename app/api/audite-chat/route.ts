@@ -254,7 +254,10 @@ export async function POST(request: Request) {
 
     return result.toUIMessageStreamResponse({
       headers: corsHeaders,
-      onError: () => "Generation impossible pour le moment.",
+      onError: (error) => {
+        console.error("Erreur de generation audite-chat:", error);
+        return "Generation impossible pour le moment.";
+      },
     });
   } catch (error) {
     const message =
