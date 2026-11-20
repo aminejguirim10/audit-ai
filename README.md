@@ -160,6 +160,29 @@ docker run --rm -p 3000:3000 --env-file .env audit-ai
 
 The server exposes port 3000 by default.
 
+## CI/CD security pipeline
+
+The GitHub Actions workflow runs this order on pull requests and pushes to `main`:
+
+1. npm clean install and ESLint
+2. npm production dependency audit
+3. SonarCloud analysis and Quality Gate
+4. Trivy filesystem scan
+5. Next.js production build
+6. Docker image build
+7. Trivy image scan
+8. OWASP ZAP baseline DAST scan
+9. Docker Hub push of immutable and `latest` tags (only for pushes to `main`)
+
+SonarCloud requires GitHub Actions repository configuration:
+
+- Secret `SONAR_TOKEN`
+- Actions variables `SONAR_PROJECT_KEY` and `SONAR_ORGANIZATION`
+- Docker Hub secrets `DOCKER_USERNAME` and `DOCKER_PASSWORD`
+
+SonarCloud project settings are kept in `sonar-project.properties`. No local Sonar server
+file is required because the repository uses SonarCloud.
+
 ## 📦 Project Structure
 
 ```text

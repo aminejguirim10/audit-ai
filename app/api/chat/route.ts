@@ -187,7 +187,6 @@ function buildFallbackAction(question: string): CorrectiveAction {
 
 function parseActionFromText(
   text: string,
-  question: string,
 ): CorrectiveAction | null {
   const candidates: string[] = [text.trim()];
   const fencedMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
@@ -263,7 +262,7 @@ async function generateActionForQuestion(
       ].join("\n"),
     });
 
-    const action = parseActionFromText(text, question);
+    const action = parseActionFromText(text);
     if (!action) return buildFallbackAction(question);
 
     const priority = action.priority ?? priorityFromQuestion(question);

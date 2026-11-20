@@ -25,24 +25,6 @@ function ShieldIcon({ className }: IconProps) {
   );
 }
 
-function SparkIcon({ className }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="m12 2 1.9 6.1L20 10l-6.1 1.9L12 18l-1.9-6.1L4 10l6.1-1.9L12 2Z" />
-      <path d="M19 14.5 20 18l3.5 1-3.5 1L19 23l-1-3.5-3.5-1 3.5-1 1-3Z" />
-    </svg>
-  );
-}
-
 function MonitorIcon({ className }: IconProps) {
   return (
     <svg
