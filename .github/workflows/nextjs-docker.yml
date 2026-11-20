@@ -17,7 +17,7 @@ concurrency:
 
 env:
   IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/audit-ai
-  NODE_VERSION: "22"
+  NODE_VERSION: "24"
 
 jobs:
   quality_and_build:
